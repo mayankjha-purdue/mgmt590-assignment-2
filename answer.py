@@ -30,10 +30,6 @@ def create_tables():
         cursor.execute(table)
 
 
-
-
-
-
 modelList = [
     {
         'name': "distilled-bert",
@@ -54,35 +50,6 @@ def hello_world():
     return "<p>Hello, World!</p>"
 
 
-# Define a handler for the /answer path, which
-# processes a JSON payload with a question and
-# context and returns an answer using a Hugging
-# Face model.
-@app.route("/answer", methods=['POST'])
-def answer():
-    # Get the request body data
-    data = request.json
-
-    # Import model
-    hg_comp = pipeline('question-answering', model=modelList[0]['model'],
-                       tokenizer=modelList[0]['tokenizer'])
-
-    # Answer the answer
-    answer = hg_comp({'question': data['question'], 'context': data['context']})['answer']
-
-    # Create the response body.
-    out = {
-        "question": data['question'],
-        "context": data['context'],
-        "answer": answer
-    }
-
-    return jsonify(out)
-
-
-
-
-
 def insert_db(timestamp, model, answer,question,context):
     db = get_db()
     cursor = db.cursor()
@@ -92,7 +59,7 @@ def insert_db(timestamp, model, answer,question,context):
 
 
 
-@app.route("/answers", methods=['POST','GET'])
+@app.route("/answer", methods=['POST','GET'])
 def answers():
     if request.method == 'POST':
         # Get the request body data
@@ -165,18 +132,39 @@ def answers():
             cursor = db.cursor()
             cursor.execute(query,[start,end])
             result = cursor.fetchall()
-            return jsonify(result)
+            out=[]
+            for index, tuple in enumerate(result):
+                dict={
+                "timestamp": tuple[0],
+                "model": tuple[1],
+                "answer": tuple[2],
+                "question": tuple[3],
+                "context": tuple[4]}
+                out.append(dict)
+
+            return jsonify(out)
+
         else:
             query = "SELECT timestamp, model, answer, question,context FROM prodscale WHERE timestamp BETWEEN ? AND ? AND model=?"
             db = get_db()
             cursor = db.cursor()
             cursor.execute(query,[start,end,model])
             result = cursor.fetchall()
-            return jsonify(result)
+            out=[]
+            for index, tuple in enumerate(result):
+                dict={
+                "timestamp": tuple[0],
+                "model": tuple[1],
+                "answer": tuple[2],
+                "question": tuple[3],
+                "context": tuple[4]}
+                out.append(dict)
+
+            return jsonify(out)
 
 
 
-@app.route("/model", methods=['GET','PUT','DELETE'])
+@app.route("/models", methods=['GET','PUT','DELETE'])
 def getModels(modelList=modelList):
     if request.method == 'PUT':
         data = request.json
