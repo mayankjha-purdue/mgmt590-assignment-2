@@ -5,7 +5,7 @@ on:
 
 name: Build and Deploy a Container
 env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT }}
+  PROJECT_ID: sunlit-flag-314720
   SERVICE: mgmt590-assignment-2
   REGION: us-central1
 
