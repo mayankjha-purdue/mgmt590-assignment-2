@@ -4,7 +4,6 @@ from flask import jsonify
 from flask import request
 from transformers.pipelines import pipeline
 import os
-
 global modelList
 import sqlite3
 DATABASE_NAME = "prodscale.db"
