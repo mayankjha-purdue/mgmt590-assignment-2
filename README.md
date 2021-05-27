@@ -3,6 +3,7 @@
 ## Creating Flask Application - Question Answering
 
 Purpose of the this hands-on project was to create a REST API inference server that serves inferences from a Transformers NLP model
+The app is deployed at: https://mgmt590-assignment-2-kbmrvvvzgq-uc.a.run.app
 
 ![sqlite-python-flask](./images/sqlite-python-flask.jpeg)
 ![google cloud](./images/google cloud.gif)
@@ -30,9 +31,11 @@ master branch of your GitHub repository
 
 - Part 2 - Getting to know the Python Flask framework
 
-- Part 3 - Write a Simple Hello World Web Application on GitHub Repo
+- Part 3 - Dependencies
 
-- Part 4 - Run the Hello World App on EC2 Instance
+- Part 4 - REST API endpoints
+
+- Part 5 - Building and running the API locally
 
 
 
@@ -160,7 +163,7 @@ Follow the installation pages of Flax, PyTorch or TensorFlow to see how to insta
 
 
 
-## Part 1 - Getting to know the Python Flask framework
+## Part 2 - Getting to know the Python Flask framework
 
 ![Flask](./flask.png)
 
@@ -205,3 +208,241 @@ def hello():
 $ flask run
   * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
 ```
+
+# Flask RESTful API SQLite3
+
+This project is created with `python` and `flask` and for the database utility
+I have used `sqlite3`.
+
+
+## 
+
+The API information will be stored in a file `prodscale.db` which will act as the SQLite database.
+To generate this file, *and with it the tables*, a function `create_table` is triggered from `app.py`.
+
+You will then be able to add new data and do  CRUD operation(s).
+
+## Part -3 Dependencies
+
+The Dependencies are in the `requirements.txt` namely:
+
+Flask==1.1.2
+
+transformers==4.2.2
+
+if you want to exactly rebuild the development environment
+run the following command:
+
+    (venv) $ pip install -r requirements.txt
+    
+The required packages are outdated very quickly and you can try to use newer versions.
+If you experience problems you can always go back and use the version specified here.
+
+To generate your own requirements file use
+
+    (venv) $ pip freeze >requirements.txt 
+
+## Part-4 The available endpoints are:
+
+
+##List Available Models
+- GET  `/models`: This route allows a user to obtain a list of the models currently loaded into the server and available for inference :
+
+Expected Response Format :
+
+  ```json
+[
+    {
+        "name": "distilled-bert",
+        "tokenizer": "distilbert-base-uncased-distilled-squad",
+        "model": "distilbert-base-uncased-distilled-squad"
+    },
+    {
+        "name": "deepset-roberta",
+        "tokenizer": "deepset/roberta-base-squad2",
+        "model": "deepset/roberta-base-squad2"
+    }
+]
+  ```
+
+## Add a Model
+- PUT  `/models`: This route allows a user to add a new model into the server and make it available for inference.
+
+Expected Request Format :
+
+  ```json
+    {
+        "name": "distilled-bert",
+        "tokenizer": "distilbert-base-uncased-distilled-squad",
+        "model": "distilbert-base-uncased-distilled-squad"
+    }
+  ```
+
+Expected Response Format :
+
+  ```json
+[
+    {
+        "name": "distilled-bert",
+        "tokenizer": "distilbert-base-uncased-distilled-squad",
+        "model": "distilbert-base-uncased-distilled-squad"
+    },
+    {
+        "name": "deepset-roberta",
+        "tokenizer": "deepset/roberta-base-squad2",
+        "model": "deepset/roberta-base-squad2"
+    }
+]
+  ```
+## Delete a Model
+
+- DELETE   `/models?model=<model name>`: This route allows a user to delete an existing model on the server such that it is no longer available for inference.
+
+Query Parameters:
+`<model name> (required) - The name of the model to be deleted`
+
+Expected Response Format(updated list of available models) :
+
+  ```json
+[
+    {
+        "name": "distilled-bert",
+        "tokenizer": "distilbert-base-uncased-distilled-squad",
+        "model": "distilbert-base-uncased-distilled-squad"
+    },
+    {
+        "name": "deepset-roberta",
+        "tokenizer": "deepset/roberta-base-squad2",
+        "model": "deepset/roberta-base-squad2"
+    }
+]
+  ```
+
+## Answer a Question
+
+- POST  `/answer?model=<model name>`: This route uses one of the available models to answer a question, given the context provided in the JSON payload.
+
+Query Parameters:
+`<model name> (optional) - The name of the model to be used in answering the
+question. If no model name is provided use a default model.`
+
+Expected Request Format :
+
+  ```json
+{
+  "question": "who did holly matthews play in waterloo rd?",
+  "context": "She attended the British drama school East 15 in 2005,and left after winning a high-profile role in the BBC drama Waterloo Road, playing the bully Leigh-Ann Galloway.[6] Since that role, Matthews has continued to act in BBC's Doctors, playing Connie Whitfield; in ITV's The Bill playing drug addict Josie Clarke; and she was back in the BBC soap Doctors in 2009, playing Tansy Flack."
+}
+  ```
+
+Expected Response Format :
+
+  ```json
+{
+  "timestamp": 1621602784,
+  "model": "deepset-roberta",
+  "answer": "Leigh-Ann Galloway",
+  "question": "who did holly matthews play in waterloo rd?",
+  "context": "She attended the British drama school East 15 in 2005,and left after winning a high-profile role in the BBC drama Waterloo Road, playing the bully Leigh-Ann Galloway.[6] Since that role, Matthews has continued to act in BBC's Doctors, playing Connie Whitfield; in ITV's The Bill playing drug addict Josie Clarke; and she was back in the BBC soap Doctors in 2009, playing Tansy Flack."
+}
+  ```
+##List Recently Answered Questions
+
+- GET  `/answer?model=<model name>&start=<start timestamp>&end=<end
+timestamp>`: This route returns recently answered questions
+  
+Query Parameters:
+
+`<model name> (optional) - Filter the results by providing a certain model name, such
+that the results only include answered questions that were answered using the provided
+model.`
+
+`<start timestamp> (required) - The starting timestamp, such that answers to questions
+prior to this timestamp won't be returned. This should be a Unix timestamp.`
+
+`<end timestamp> (required) - The ending timestamp, such that answers to questions
+after this timestamp won't be returned. This should be a Unix timestamp.`
+
+Expected Response Format :
+
+  ```json
+[
+    {
+        "timestamp": 1622100672,
+        "model": "distilled-bert",
+        "answer": "Leigh-Ann Galloway",
+        "question": "who did holly matthews play in waterloo rd?",
+        "context": "She attended the British drama school East 15 in 2005,and left after winning a high-profile role in the BBC drama Waterloo Road, playing the bully Leigh-Ann Galloway.[6] Since that role, Matthews has continued to act in BBC's Doctors, playing Connie Whitfield; in ITV's The Bill playing drug addict Josie Clarke; and she was back in the BBC soap Doctors in 2009, playing Tansy Flack."
+    },
+    {
+        "timestamp": 1622100683,
+        "model": "distilled-bert",
+        "answer": "Leigh-Ann Galloway",
+        "question": "who did holly matthews play in waterloo rd?",
+        "context": "She attended the British drama school East 15 in 2005,and left after winning a high-profile role in the BBC drama Waterloo Road, playing the bully Leigh-Ann Galloway.[6] Since that role, Matthews has continued to act in BBC's Doctors, playing Connie Whitfield; in ITV's The Bill playing drug addict Josie Clarke; and she was back in the BBC soap Doctors in 2009, playing Tansy Flack."
+    }
+]
+ ```
+## Part 5 : Building and running the API locally
+
+### Running Locally with Python and Flask
+
+To run this application on your local operating system, you will need to have
+[Python installed](https://www.python.org/downloads/).
+
+1. Install required dependencies using the Python package installer (`pip`):
+
+   ```
+   $ pip install -r requirements.txt
+   ```
+
+1. Run the app:
+
+   ```
+   $ FLASK_APP=answers.py flask run
+   ```
+
+1. Navigate to `http://localhost:8080` in your web browser to access the running
+   application
+
+### Running Locally with Docker
+
+This application may be run locally using
+[Docker](https://docs.docker.com/get-docker/).
+
+1. Build the Docker image:
+
+   ```
+   $ docker build -t mgmt590-assignment-2
+   ```
+
+1. Run the docker container:
+   ```
+   $ docker run --env PORT=8080 -p 8080:8080 mgmt590-assignment-2
+   ```
+
+1. Navigate to `http://localhost:8080` in your web browser to access the running
+   application
+
+### Deploying with Google Cloud Run
+
+This application can be deployed to Google Cloud Run. This requires a Google
+account.
+
+1. Select or create a Google Cloud project using the
+[Google Cloud Console](https://console.cloud.google.com/projectselector2/home/dashboard)
+
+1. Install and initialize the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+
+1. Build and deploy the application to Google Cloud Run, following the on-screen
+   prompts:
+
+   ```
+   $ export PROJECT_ID=$(gcloud config get-value project)
+   $ gcloud builds submit --tag gcr.io/$PROJECT_ID/py-calc
+   $ gcloud run deploy --image gcr.io/$PROJECT_ID/py-calc --platform managed
+   ```
+
+1. When complete, the last command execute in the previous step will display the
+   URL of deployed application; navigate to that URL in your web browser to
+   access the application.
