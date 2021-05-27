@@ -5,6 +5,7 @@ from flask import request
 from transformers.pipelines import pipeline
 from db import create_tables
 from db import get_db
+import os
 
 global modelList
 modelList = [
@@ -186,5 +187,4 @@ if __name__ == '__main__':
     # Run our Flask app and start listening for requests!
     create_tables()
     default_model = modelList[0]
-
-    app.run(host='0.0.0.0', port=8000, threaded=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)), threaded=True)
