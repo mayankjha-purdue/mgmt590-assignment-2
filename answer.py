@@ -6,7 +6,9 @@ from transformers.pipelines import pipeline
 import os
 global modelList
 import sqlite3
+from flask import abort
 import torch
+
 DATABASE_NAME = "prodscale.db"
 
 
@@ -58,7 +60,8 @@ def insert_db(timestamp, model, answer,question,context):
     cursor.execute(statement, [timestamp, model, answer,question,context])
     db.commit()
 
-
+def my_funct(text):
+   abort(400, text)
 
 @app.route("/answer", methods=['POST','GET'])
 def answers():
@@ -69,8 +72,11 @@ def answers():
 
         if (model == None):
             model = default_model['name']
-            hg_comp = pipeline('question-answering', model=default_model['model'],
+            try:
+                hg_comp = pipeline('question-answering', model=default_model['model'],
                                tokenizer=default_model['tokenizer'])
+            except:
+                my_funct("Invalid Model Name")
             # Answer the answer
             answer = hg_comp({'question': data['question'], 'context': data['context']})['answer']
 
@@ -100,8 +106,11 @@ def answers():
                     tokenizer = modelList[i]['tokenizer']
                     break
 
-            hg_comp = pipeline('question-answering', model=model_name,
+            try:
+                hg_comp = pipeline('question-answering', model=model_name,
                                tokenizer=tokenizer)
+            except:
+                my_funct()
             # Answer the answer
             answer = hg_comp({'question': data['question'], 'context': data['context']})['answer']
 
@@ -169,11 +178,19 @@ def answers():
 def getModels(modelList=modelList):
     if request.method == 'PUT':
         data = request.json
-        modelList.append({
-            'name': data['name'],
-            'tokenizer': data['tokenizer'],
-            'model': data['model']
-        })
+
+        try:
+            hg_comp = pipeline('question-answering', model=data['model'],
+                               tokenizer=data['tokenizer'])
+            modelList.append({
+                'name': data['name'],
+                'tokenizer': data['tokenizer'],
+                'model': data['model']
+            })
+
+        except:
+            my_funct("Invalid Model Name")
+
         seen = set()
         new_l = []
         for d in modelList:
