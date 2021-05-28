@@ -7,7 +7,6 @@ import os
 global modelList
 import sqlite3
 from flask import abort
-import torch
 
 DATABASE_NAME = "prodscale.db"
 
@@ -73,8 +72,8 @@ def answers():
         if (model == None):
             model = default_model['name']
             try:
-                hg_comp = pipeline('question-answering', model=default_model['model'],
-                               tokenizer=default_model['tokenizer'])
+                hg_comp = pipeline('question-answering', model='distilbert-base-uncased-distilled-squad',
+                               tokenizer='distilbert-base-uncased-distilled-squad')
             except:
                 my_funct("Invalid Model Name")
             # Answer the answer
@@ -211,6 +210,15 @@ def getModels(modelList=modelList):
         return jsonify(modelList)
 
     else:
+        seen = set()
+        new_l = []
+        for d in modelList:
+            t = tuple(d.items())
+            if t not in seen:
+                seen.add(t)
+                new_l.append(d)
+
+        modelList = new_l
         return jsonify(modelList)
 
 
