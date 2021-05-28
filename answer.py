@@ -207,6 +207,15 @@ def getModels(modelList=modelList):
             if modelList[i]['name'] == model:
                 del modelList[i]
                 break
+        seen = set()
+        new_l = []
+        for d in modelList:
+            t = tuple(d.items())
+            if t not in seen:
+                seen.add(t)
+                new_l.append(d)
+
+        modelList = new_l
         return jsonify(modelList)
 
     else:
