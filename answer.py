@@ -109,7 +109,7 @@ def answers():
                 hg_comp = pipeline('question-answering', model=model_name,
                                tokenizer=tokenizer)
             except:
-                my_funct("Invalid Model Name")
+                my_funct("Invalid")
             # Answer the answer
             answer = hg_comp({'question': data['question'], 'context': data['context']})['answer']
 
@@ -130,6 +130,8 @@ def answers():
             return jsonify(out)
     else:
 
+        if request.args.get('start') == None or request.args.get('end') == None:
+            return "Query timestamps not provided", 400
         model = request.args.get('model')
         start = request.args.get('start')
         end = request.args.get('end')
@@ -202,6 +204,8 @@ def getModels(modelList=modelList):
         return jsonify(modelList)
 
     elif request.method == 'DELETE':
+        if request.args.get('model') == None:
+            return "Model name not provided in query string", 400
         model = request.args.get('model')
         for i in range(len(modelList)):
             if modelList[i]['name'] == model:
