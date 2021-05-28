@@ -6,6 +6,7 @@ from transformers.pipelines import pipeline
 import os
 global modelList
 import sqlite3
+import torch
 DATABASE_NAME = "prodscale.db"
 
 
