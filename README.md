@@ -6,7 +6,7 @@ Purpose of the this hands-on project was to create a REST API inference server t
 The app is deployed at: https://mgmt590-assignment-2-kbmrvvvzgq-uc.a.run.app
 
 ![sqlite-python-flask](./images/sqlite-python-flask.jpeg)
-![google cloud](./images/gcloud.png)
+![google cloud](./images/google cloud.gif)
 
 ## Learning Outcomes
 
@@ -36,6 +36,8 @@ master branch of your GitHub repository
 - Part 4 - REST API endpoints
 
 - Part 5 - Building and running the API locally
+
+- Part 6 - CI/CD with Github Actions and Google Cloud Run
 
 
 
@@ -229,6 +231,8 @@ The Dependencies are in the `requirements.txt` namely:
 Flask==1.1.2
 
 transformers==4.2.2
+
+torch==1.8.1
 
 if you want to exactly rebuild the development environment
 run the following command:
@@ -446,3 +450,65 @@ account.
 1. When complete, the last command execute in the previous step will display the
    URL of deployed application; navigate to that URL in your web browser to
    access the application.
+   
+## Part 6 - CI/CD with Github Actions and Google Cloud Runs
+
+To automate the process of building and deploying images to Google Cloud Run, we can utilize Google Cloud Run GitHub Action. 
+
+Related documentation is available [here](https://github.com/GoogleCloudPlatform/github-actions/blob/master/example-workflows/cloud-run/README.md).
+
+# Pre-requisites
+
+1. [Create a Google Cloud Service Account](https://cloud.google.com/iam/docs/creating-managing-service-accounts)
+
+2. Add the following Cloud IAM roles
+
+`Cloud Run Admin`
+
+`Cloud Build Editor`
+
+`Cloud Build Service Account`
+
+`Viewer`
+
+`Service Account User`
+
+3. [Create a Service Account JSON key](https://cloud.google.com/iam/docs/creating-managing-service-account-keys)
+
+4. Add a GitHub Secret to your repository:
+
+`RUN_SA_KEY` : Content of service account JSON Key that was generated in previous step.
+
+5. Set workflow variables
+
+`PROJECT_ID` : Google Cloud Project ID
+
+`SERVICE_NAME` : Service Name. This name will be used as the image name and service name.
+
+# Example GitHub Action Workflow
+
+```
+    # Setup GCloud CLI
+    - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+      with:
+        version: '286.0.0'
+        service_account_key: ${{ secrets.RUN_SA_KEY }}
+        project_id: $PROJECT_ID
+
+    # Build and push image to Google Container Registry
+    - name: Build
+      run: |-
+        gcloud builds submit \
+          --quiet \
+          --tag "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"
+
+    # Deploy image to Cloud Run
+    - name: Deploy
+      run: |-
+        gcloud run deploy "$SERVICE_NAME" \
+          --quiet \
+          --region "$RUN_REGION" \ # E.g. centralus1
+          --image "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA" \
+          --platform "managed" \
+          --allow-unauthenticated
+```
