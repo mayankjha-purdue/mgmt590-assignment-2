@@ -109,7 +109,7 @@ def answers():
                 hg_comp = pipeline('question-answering', model=model_name,
                                tokenizer=tokenizer)
             except:
-                my_funct()
+                my_funct("Invalid Model Name")
             # Answer the answer
             answer = hg_comp({'question': data['question'], 'context': data['context']})['answer']
 
